@@ -49,10 +49,10 @@ colorspaces:
     to_reference: !<GroupTransform>
       children:
         - !<FileTransform> {src: sRGB_CCTF_to_Linear.spi1d, interpolation: nearest}
-        - !<MatrixTransform> {matrix: [0.437631, 0.368275, 0.152679, 0, 0.241114, 0.711634, 0.0543562, 0, 0.0227557, 0.117002, 0.872653, 0, 0, 0, 0, 1]}
+        - !<MatrixTransform> {matrix: [0.88283, 0.114514, 0.00280126, 0, -0.00768098, 1.00783, -0.000193933, 0, -0.00285913, -0.00917985, 1.01198, 0, 0, 0, 0, 1]}
     from_reference: !<GroupTransform>
       children:
-        - !<MatrixTransform> {matrix: [0.437631, 0.368275, 0.152679, 0, 0.241114, 0.711634, 0.0543562, 0, 0.0227557, 0.117002, 0.872653, 0, 0, 0, 0, 1], direction: inverse}
+        - !<MatrixTransform> {matrix: [0.88283, 0.114514, 0.00280126, 0, -0.00768098, 1.00783, -0.000193933, 0, -0.00285913, -0.00917985, 1.01198, 0, 0, 0, 0, 1], direction: inverse}
         - !<FileTransform> {src: sRGB_Linear_to_CCTF.spi1d, interpolation: nearest}
 
   - !<ColorSpace>
@@ -68,10 +68,10 @@ colorspaces:
     to_reference: !<GroupTransform>
       children:
         - !<ExponentTransform> {value: [2.2, 2.2, 2.2, 1]}
-        - !<MatrixTransform> {matrix: [0.437631, 0.368275, 0.152679, 0, 0.241114, 0.711634, 0.0543562, 0, 0.0227557, 0.117002, 0.872653, 0, 0, 0, 0, 1]}
+        - !<MatrixTransform> {matrix: [0.88283, 0.114514, 0.00280126, 0, -0.00768098, 1.00783, -0.000193933, 0, -0.00285913, -0.00917985, 1.01198, 0, 0, 0, 0, 1]}
     from_reference: !<GroupTransform>
       children:
-        - !<MatrixTransform> {matrix: [0.437631, 0.368275, 0.152679, 0, 0.241114, 0.711634, 0.0543562, 0, 0.0227557, 0.117002, 0.872653, 0, 0, 0, 0, 1], direction: inverse}
+        - !<MatrixTransform> {matrix: [0.88283, 0.114514, 0.00280126, 0, -0.00768098, 1.00783, -0.000193933, 0, -0.00285913, -0.00917985, 1.01198, 0, 0, 0, 0, 1], direction: inverse}
         - !<ExponentTransform> {value: [2.2, 2.2, 2.2, 1], direction: inverse}
 
   - !<ColorSpace>

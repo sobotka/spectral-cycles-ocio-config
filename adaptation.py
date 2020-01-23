@@ -88,6 +88,10 @@ if __name__ == "__main__":
         domain=sRGB_domain,
         comments=["sRGB Display Linear to CCTF"])
 
+    sRGB_D65_to_IE_RGB_to_RGB_matrix = colour.RGB_to_RGB_matrix(
+        models.sRGB_COLOURSPACE,
+        sRGB_IE)
+
     io.write_LUT(
         LUT=sRGB_tf_to_linear_LUT,
         path=path_prefix_luts + "sRGB_CCTF_to_Linear.spi1d",
@@ -128,26 +132,22 @@ if __name__ == "__main__":
         PyOpenColorIO.FileTransform(
             "sRGB_CCTF_to_Linear.spi1d",
             interpolation=PyOpenColorIO.Constants.INTERP_NEAREST))
-    CAT_D65_to_IE = adaptation.chromatic_adaptation_matrix_VonKries(
-        colour.xy_to_XYZ(models.sRGB_COLOURSPACE.whitepoint),
-        colour.xy_to_XYZ(sRGB_IE.whitepoint)
-    )
-    sRGB_D65_to_IE_XYZ = numpy.matmul(
-        models.sRGB_COLOURSPACE.RGB_to_XYZ_matrix,
-        CAT_D65_to_IE
-    )
 
-    ocio_sRGB_D65_to_IE_XYZ = shape_OCIO_matrix(sRGB_D65_to_IE_XYZ)
-    transform_sRGB_D65_to_IE_XYZ =\
-        PyOpenColorIO.MatrixTransform(ocio_sRGB_D65_to_IE_XYZ)
-    transform_to.push_back(transform_sRGB_D65_to_IE_XYZ)
+    ocio_sRGB_D65_to_sRGB_IE_matrix = shape_OCIO_matrix(
+        sRGB_D65_to_IE_RGB_to_RGB_matrix)
+    transform_sRGB_D65_to_sRGB_IE =\
+        PyOpenColorIO.MatrixTransform(ocio_sRGB_D65_to_sRGB_IE_matrix)
+    transform_to.push_back(transform_sRGB_D65_to_sRGB_IE)
     transform_from = PyOpenColorIO.GroupTransform()
 
-    transform_IE_XYZ_to_sRGB_D65 =\
-        PyOpenColorIO.MatrixTransform(ocio_sRGB_D65_to_IE_XYZ)
-    transform_IE_XYZ_to_sRGB_D65.setDirection(
+    # The first object is the wrong direction re-used from above.
+    transform_sRGB_IE_to_sRGB_D65 =\
+        PyOpenColorIO.MatrixTransform(ocio_sRGB_D65_to_sRGB_IE_matrix)
+
+    # Flip the direction to get the proper output
+    transform_sRGB_IE_to_sRGB_D65.setDirection(
         PyOpenColorIO.Constants.TRANSFORM_DIR_INVERSE)
-    transform_from.push_back(transform_IE_XYZ_to_sRGB_D65)
+    transform_from.push_back(transform_sRGB_IE_to_sRGB_D65)
     transform_from.push_back(
         PyOpenColorIO.FileTransform(
             "sRGB_Linear_to_CCTF.spi1d",
@@ -171,26 +171,11 @@ if __name__ == "__main__":
     transform_to = PyOpenColorIO.GroupTransform()
     transform_to.push_back(
         PyOpenColorIO.ExponentTransform([2.2, 2.2, 2.2, 1.0]))
-    CAT_D65_to_IE = adaptation.chromatic_adaptation_matrix_VonKries(
-        colour.xy_to_XYZ(models.sRGB_COLOURSPACE.whitepoint),
-        colour.xy_to_XYZ(sRGB_IE.whitepoint)
-    )
-    sRGB_D65_to_IE_XYZ = numpy.matmul(
-        models.sRGB_COLOURSPACE.RGB_to_XYZ_matrix,
-        CAT_D65_to_IE
-    )
 
-    ocio_sRGB_D65_to_IE_XYZ = shape_OCIO_matrix(sRGB_D65_to_IE_XYZ)
-    transform_sRGB_D65_to_IE_XYZ =\
-        PyOpenColorIO.MatrixTransform(ocio_sRGB_D65_to_IE_XYZ)
-    transform_to.push_back(transform_sRGB_D65_to_IE_XYZ)
+    transform_to.push_back(transform_sRGB_D65_to_sRGB_IE)
     transform_from = PyOpenColorIO.GroupTransform()
 
-    transform_IE_XYZ_to_sRGB_D65 =\
-        PyOpenColorIO.MatrixTransform(ocio_sRGB_D65_to_IE_XYZ)
-    transform_IE_XYZ_to_sRGB_D65.setDirection(
-        PyOpenColorIO.Constants.TRANSFORM_DIR_INVERSE)
-    transform_from.push_back(transform_IE_XYZ_to_sRGB_D65)
+    transform_from.push_back(transform_sRGB_IE_to_sRGB_D65)
     exponent_transform = PyOpenColorIO.ExponentTransform([2.2, 2.2, 2.2, 1.0])
     exponent_transform.setDirection(
         PyOpenColorIO.Constants.TRANSFORM_DIR_INVERSE)
@@ -216,20 +201,8 @@ if __name__ == "__main__":
         ])
     colourspace.setAllocation(PyOpenColorIO.Constants.ALLOCATION_LG2)
 
-    CAT_D65_to_IE = adaptation.chromatic_adaptation_matrix_VonKries(
-        colour.xy_to_XYZ(models.sRGB_COLOURSPACE.whitepoint),
-        colour.xy_to_XYZ(sRGB_IE.whitepoint)
-    )
-    sRGB_D65_to_IE_XYZ = numpy.matmul(
-        models.sRGB_COLOURSPACE.RGB_to_XYZ_matrix,
-        CAT_D65_to_IE
-    )
-
-    ocio_sRGB_D65_to_IE_XYZ = shape_OCIO_matrix(sRGB_D65_to_IE_XYZ)
-    transform_to = PyOpenColorIO.MatrixTransform(ocio_sRGB_D65_to_IE_XYZ)
-
-    transform_from = PyOpenColorIO.MatrixTransform(ocio_sRGB_D65_to_IE_XYZ)
-    transform_from.setDirection(PyOpenColorIO.Constants.TRANSFORM_DIR_INVERSE)
+    transform_to = transform_sRGB_D65_to_sRGB_IE
+    transform_from = transform_sRGB_IE_to_sRGB_D65
 
     colourspace.setTransform(
         transform_to, PyOpenColorIO.Constants.COLORSPACE_DIR_TO_REFERENCE)
