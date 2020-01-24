@@ -68,10 +68,6 @@ if __name__ == "__main__":
         use_derived_RGB_to_XYZ_matrix=True,
         use_derived_XYZ_to_RGB_matrix=True)
 
-    ocioshape_IE_to_D65 = shape_OCIO_matrix(sRGB_IE.RGB_to_XYZ_matrix)
-    ociotransform_IE_to_D65 =\
-        PyOpenColorIO.MatrixTransform(ocioshape_IE_to_D65)
-
     sRGB_domain = numpy.array([0.0, 1.0])
     sRGB_tf_to_linear_LUT = colour.LUT1D(
         table=models.sRGB_COLOURSPACE.cctf_decoding(
@@ -105,11 +101,13 @@ if __name__ == "__main__":
 
     config.setSearchPath(":".join(LUT_search_paths))
 
-    # Define the radiometrically linear XYZ space
+    # Define the radiometrically linear RGB space with BT.709 primaries and
+    # assumed adapted Illuminant E based white point.
     colourspace = PyOpenColorIO.ColorSpace(
         family="Colourspace",
-        name="Linear XYZ")
-    colourspace.setDescription("Linear XYZ")
+        name="Linear")
+    colourspace.setDescription(
+        "Linear BT.709 based reference with illuminant E based white point")
     colourspace.setBitDepth(PyOpenColorIO.Constants.BIT_DEPTH_F32)
     colourspace.setAllocationVars(
         [
@@ -147,6 +145,7 @@ if __name__ == "__main__":
     # Flip the direction to get the proper output
     transform_sRGB_IE_to_sRGB_D65.setDirection(
         PyOpenColorIO.Constants.TRANSFORM_DIR_INVERSE)
+
     transform_from.push_back(transform_sRGB_IE_to_sRGB_D65)
     transform_from.push_back(
         PyOpenColorIO.FileTransform(
@@ -188,11 +187,12 @@ if __name__ == "__main__":
 
     config.addColorSpace(colourspace)
 
-    # Define the reference ITU-R BT.709 linear RGB to XYZ transform
+    # Define the reference ITU-R BT.709 linear RGB
     colourspace = PyOpenColorIO.ColorSpace(
         family="Chromaticity",
-        name="sRGB Linear RGB")
-    colourspace.setDescription("sRGB IEC 61966-2-1 Linear RGB")
+        name="sRGB Linear")
+    colourspace.setDescription(
+        "sRGB IEC 61966-2-1 primaries with linear transfer function")
     colourspace.setBitDepth(PyOpenColorIO.Constants.BIT_DEPTH_F32)
     colourspace.setAllocationVars(
         [
@@ -211,6 +211,42 @@ if __name__ == "__main__":
 
     config.addColorSpace(colourspace)
 
+    # Define the XYZ space relative to this reference
+    colourspace = PyOpenColorIO.ColorSpace(
+        family="Chromaticity",
+        name="Linear XYZ IE")
+    colourspace.setDescription(
+        "XYZ transform with assumed IE white point")
+    colourspace.setBitDepth(PyOpenColorIO.Constants.BIT_DEPTH_F32)
+    colourspace.setAllocationVars(
+        [
+            numpy.log2(calculate_ev_to_rl(-10.0)),
+            numpy.log2(calculate_ev_to_rl(15.0))
+        ])
+    colourspace.setAllocation(PyOpenColorIO.Constants.ALLOCATION_LG2)
+
+    # Make the original transform
+    ocioshape_sRGB_IE_to_XYZ = shape_OCIO_matrix(sRGB_IE.RGB_to_XYZ_matrix)
+    ociotransform_sRGB_IE_to_XYZ =\
+        PyOpenColorIO.MatrixTransform(ocioshape_sRGB_IE_to_XYZ)
+
+    # Make a copy, with wrong direction, then set direction
+    ociotransform_XYZ_to_sRGB_IE =\
+        PyOpenColorIO.MatrixTransform(ocioshape_sRGB_IE_to_XYZ)
+    ociotransform_XYZ_to_sRGB_IE.setDirection(
+        PyOpenColorIO.Constants.TRANSFORM_DIR_INVERSE)
+
+    transform_to = ociotransform_sRGB_IE_to_XYZ
+    transform_from = ociotransform_XYZ_to_sRGB_IE
+
+    colourspace.setTransform(
+        transform_to, PyOpenColorIO.Constants.COLORSPACE_DIR_TO_REFERENCE)
+    colourspace.setTransform(
+        transform_from, PyOpenColorIO.Constants.COLORSPACE_DIR_FROM_REFERENCE)
+
+    config.addColorSpace(colourspace)
+
+
     # Define the Non-Colour Data transform
     colorspace = PyOpenColorIO.ColorSpace(
         family="Data",
@@ -221,14 +257,14 @@ if __name__ == "__main__":
     config.addColorSpace(colorspace)
 
     # Define the luminance coefficients for the configuration
-    config.setDefaultLumaCoefs(sRGB_D65_to_IE_XYZ[1])
+    config.setDefaultLumaCoefs(sRGB_IE.RGB_to_XYZ_matrix[1])
 
     config.setRole(
         PyOpenColorIO.Constants.ROLE_SCENE_LINEAR,
-        "Linear XYZ")
+        "Linear")
     config.setRole(
         PyOpenColorIO.Constants.ROLE_REFERENCE,
-        "Linear XYZ")
+        "Linear")
     config.setRole(
         PyOpenColorIO.Constants.ROLE_COLOR_TIMING,
         "sRGB Colourspace")
@@ -254,7 +290,7 @@ if __name__ == "__main__":
     # Define the Blender Role RGB to XYZ
     config.setRole(
         "XYZ",
-        "sRGB Linear RGB")
+        "Linear XYZ IE")
 
     displays = ["sRGB Display"]
     views = [
