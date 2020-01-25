@@ -68,6 +68,16 @@ if __name__ == "__main__":
         use_derived_RGB_to_XYZ_matrix=True,
         use_derived_XYZ_to_RGB_matrix=True)
 
+    sRGB_D65 = colour.RGB_Colourspace(
+        "sRGB",
+        models.sRGB_COLOURSPACE.primaries,
+        models.sRGB_COLOURSPACE.whitepoint,
+        models.sRGB_COLOURSPACE.whitepoint_name,
+        cctf_decoding=models.sRGB_COLOURSPACE.cctf_decoding,
+        cctf_encoding=models.sRGB_COLOURSPACE.cctf_encoding,
+        use_derived_RGB_to_XYZ_matrix=True,
+        use_derived_XYZ_to_RGB_matrix=True)
+
     sRGB_domain = numpy.array([0.0, 1.0])
     sRGB_tf_to_linear_LUT = colour.LUT1D(
         table=models.sRGB_COLOURSPACE.cctf_decoding(
@@ -85,8 +95,9 @@ if __name__ == "__main__":
         comments=["sRGB Display Linear to CCTF"])
 
     sRGB_D65_to_IE_RGB_to_RGB_matrix = colour.RGB_to_RGB_matrix(
-        models.sRGB_COLOURSPACE,
-        sRGB_IE)
+        sRGB_D65,
+        sRGB_IE,
+        None)
 
     io.write_LUT(
         LUT=sRGB_tf_to_linear_LUT,
@@ -245,7 +256,6 @@ if __name__ == "__main__":
         transform_from, PyOpenColorIO.Constants.COLORSPACE_DIR_FROM_REFERENCE)
 
     config.addColorSpace(colourspace)
-
 
     # Define the Non-Colour Data transform
     colorspace = PyOpenColorIO.ColorSpace(
