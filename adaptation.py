@@ -96,8 +96,7 @@ if __name__ == "__main__":
 
     sRGB_D65_to_IE_RGB_to_RGB_matrix = colour.RGB_to_RGB_matrix(
         sRGB_D65,
-        sRGB_IE,
-        None)
+        sRGB_IE)
 
     io.write_LUT(
         LUT=sRGB_tf_to_linear_LUT,
