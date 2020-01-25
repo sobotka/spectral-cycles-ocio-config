@@ -247,8 +247,8 @@ if __name__ == "__main__":
     ociotransform_XYZ_to_sRGB_IE.setDirection(
         PyOpenColorIO.Constants.TRANSFORM_DIR_INVERSE)
 
-    transform_to = ociotransform_sRGB_IE_to_XYZ
-    transform_from = ociotransform_XYZ_to_sRGB_IE
+    transform_to = ociotransform_XYZ_to_sRGB_IE
+    transform_from = ociotransform_sRGB_IE_to_XYZ
 
     colourspace.setTransform(
         transform_to, PyOpenColorIO.Constants.COLORSPACE_DIR_TO_REFERENCE)
